@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo 1-75</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .controle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #c82333;
+            transform: scale(1.02);
+        }
+        .info {
+            background: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+        }
+        .numeros-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 70px));
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .numero {
+            background: #e9ecef;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .numero.marked {
+            background: #28a745;
+            color: white;
+            text-decoration: line-through;
+            cursor: default;
+            opacity: 0.8;
+        }
+        .sorteio-area {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .sorteio-area h3 {
+            margin-top: 0;
+        }
+        .lista-marcados {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .badge {
+            background: #6c757d;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .vazio {
+            color: #888;
+            font-style: italic;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        @media (max-width: 600px) {
+            .numeros-grid {
+                grid-template-columns: repeat(auto-fill, minmax(50px, 55px));
+            }
+            .numero {
+                font-size: 1rem;
+                padding: 8px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎲 Bingo 1-75</h1>
+    <div class="controle">
+        <button id="resetBtn">🔄 Reiniciar Bingo</button>
+        <div class="info">✅ Marcados: <span id="contador">0</span> / 75</div>
+    </div>
+
+    <div class="numeros-grid" id="bingoGrid"></div>
+
+    <div class="sorteio-area">
+        <h3>📋 Números já marcados:</h3>
+        <div id="listaMarcados" class="lista-marcados">
+            <span class="vazio">Nenhum número marcado ainda</span>
+        </div>
+    </div>
+    <footer>Clique em qualquer número para marcar/desmarcar (simula sorteio)</footer>
+</div>
+
+<script>
+    // ==================== ESTADO ====================
+    let numerosMarcados = new Set();  // guarda os números marcados
+
+    // Referências do DOM
+    const gridDiv = document.getElementById('bingoGrid');
+    const listaDiv = document.getElementById('listaMarcados');
+    const contadorSpan = document.getElementById('contador');
+
+    // ==================== FUNÇÕES ====================
+    function atualizarInterface() {
+        // Atualiza contador
+        contadorSpan.textContent = numerosMarcados.size;
+
+        // Atualiza lista de marcados (em ordem crescente)
+        const marcadosArray = Array.from(numerosMarcados).sort((a,b) => a - b);
+
+        if (marcadosArray.length === 0) {
+            listaDiv.innerHTML = '<span class="vazio">Nenhum número marcado ainda</span>';
+        } else {
+            listaDiv.innerHTML = marcadosArray.map(num => `<span class="badge">${num}</span>`).join('');
+        }
+
+        // Atualiza a classe de cada número no grid
+        const todosNumeros = document.querySelectorAll('.numero');
+        todosNumeros.forEach(el => {
+            const numero = parseInt(el.getAttribute('data-num'), 10);
+            if (numerosMarcados.has(numero)) {
+                el.classList.add('marked');
+            } else {
+                el.classList.remove('marked');
+            }
+        });
+    }
+
+    function marcarOuDesmarcar(numero) {
+        if (numerosMarcados.has(numero)) {
+            numerosMarcados.delete(numero);  // desmarca (caso queira permitir desfazer)
+        } else {
+            numerosMarcados.add(numero);      // marca
+        }
+        atualizarInterface();
+    }
+
+    function resetarBingo() {
+        numerosMarcados.clear();
+        atualizarInterface();
+    }
+
+    // ==================== CRIA GRID 1-75 ====================
+    function criarGrid() {
+        gridDiv.innerHTML = '';
+        for (let i = 1; i <= 75; i++) {
+            const divNum = document.createElement('div');
+            divNum.classList.add('numero');
+            divNum.textContent = i;
+            divNum.setAttribute('data-num', i);
+            // Evento de clique
+            divNum.addEventListener('click', (function(num) {
+                return function() { marcarOuDesmarcar(num); };
+            })(i));
+            gridDiv.appendChild(divNum);
+        }
+    }
+
+    // ==================== EVENTOS EXTERNOS ====================
+    document.getElementById('resetBtn').addEventListener('click', resetarBingo);
+
+    // ==================== INICIALIZAÇÃO ====================
+    criarGrid();
+    atualizarInterface();
+</script>
+</body>
+</html>
